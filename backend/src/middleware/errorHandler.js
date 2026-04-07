@@ -1,19 +1,11 @@
 /**
  * Global Error Handler Middleware
  * Catches and formats all unhandled errors
-<<<<<<< Updated upstream
  * 
  * @module middleware/errorHandler
  */
 
 const logger = require('../utils/logger');
-=======
- *
- * @module middleware/errorHandler
- */
-
-const logger = require("../utils/logger");
->>>>>>> Stashed changes
 
 /**
  * 404 Not Found handler
@@ -29,11 +21,7 @@ function notFoundHandler(req, res, next) {
  */
 function errorHandler(err, req, res, next) {
   const statusCode = err.status || 500;
-<<<<<<< Updated upstream
   const message = err.message || 'Internal Server Error';
-=======
-  const message = err.message || "Internal Server Error";
->>>>>>> Stashed changes
 
   // Log the error
   if (statusCode >= 500) {
@@ -54,11 +42,7 @@ function errorHandler(err, req, res, next) {
     error: {
       message,
       status: statusCode,
-<<<<<<< Updated upstream
       ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-=======
-      ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
->>>>>>> Stashed changes
     },
   });
 }
@@ -66,8 +50,4 @@ function errorHandler(err, req, res, next) {
 module.exports = {
   notFoundHandler,
   errorHandler,
-<<<<<<< Updated upstream
 };
-=======
-};
->>>>>>> Stashed changes
