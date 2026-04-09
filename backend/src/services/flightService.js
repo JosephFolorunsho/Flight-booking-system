@@ -1,78 +1,108 @@
-const adapters = require("../adapters");
-const normalizer = require("../utils/normalizer");
-const logger = require("../utils/logger");
-
-/**
- * Search flights with normalized data
- * @param {Object} params - Search parameters
- * @returns {Promise<Array>} Normalized flight data
- */
-async function searchFlights(params) {
-  try {
-    logger.info("Flight Service: Searching flights", { params });
-
-    // Get raw data from adapters
-    const rawFlights = await adapters.searchFlights(params);
-
-    // Normalize each flight based on source
-    const normalizedFlights = rawFlights
-      .map((flight) => {
-        if (flight.source === "aviationstack") {
-          return normalizer.normalizeAviationstackFlight(flight);
-        } else if (flight.source === "airlabs") {
-          return normalizer.normalizeAirlabsFlight(flight);
-        }
-        return null;
-      })
-      .filter((flight) => flight !== null); // Remove invalid flights
-
-    logger.info(
-      `Flight Service: Normalized ${normalizedFlights.length} flights`,
-    );
-
-    return normalizedFlights;
-  } catch (error) {
-    logger.error("Flight Service: Search failed", {
-      error: error.message,
-      params,
-    });
-    throw error;
-  }
-}
-
-/**
- * Get airport with normalized data
- * @param {string} iataCode - Airport IATA code
- * @returns {Promise<Object>} Normalized airport data
- */
-async function getAirport(iataCode) {
-  try {
-    logger.info("Flight Service: Getting airport", { iataCode });
-
-    // Get raw data from adapter
-    const rawAirport = await adapters.getAirport(iataCode);
-
-    // Normalize based on source
-    let normalizedAirport;
-    if (rawAirport.source === "aviationstack") {
-      normalizedAirport = normalizer.normalizeAviationstackAirport(rawAirport);
-    } else if (rawAirport.source === "airlabs") {
-      normalizedAirport = normalizer.normalizeAirlabsAirport(rawAirport);
-    }
-
-    logger.info("Flight Service: Airport normalized", { iataCode });
-
-    return normalizedAirport;
-  } catch (error) {
-    logger.error("Flight Service: Get airport failed", {
-      error: error.message,
-      iataCode,
-    });
-    throw error;
-  }
-}
-
-module.exports = {
-  searchFlights,
-  getAirport,
-};
+const adapters = require("../adapters");   
+const normalizer = require("../utils/normalizer");   
+const cacheService = require("./cacheService");   
+const logger = require("../utils/logger");   
+ 
+/**   
+* Flight Service with Caching   
+* Orchestrates flight search with cache-first strategy   
+*/   
+class FlightService {   
+ /**   
+  * Search flights with cache-first strategy   
+  * @param {Object} params - Search parameters   
+  * @returns {Promise<Array>} Normalized flight data   
+  */   
+ async searchFlights(params) {   
+   logger.info("Flight Service: Searching flights", { params });   
+  
+   // Try cache first   
+   const cachedData = await cacheService.get(params);   
+   if (cachedData) {   
+     logger.info("Flight Service: Using cached data");   
+     return cachedData;   
+   }   
+  
+   // Cache miss - fetch from APIs   
+   logger.info("Flight Service: Cache miss, fetching from APIs");   
+  
+   try {   
+     // Use adapter layer   
+     const rawFlights = await adapters.searchFlights(params);   
+  
+     // Normalize data   
+     const normalizedFlights = rawFlights   
+       .map((flight) => {   
+         if (flight.source === "aviationstack") {   
+           return normalizer.normalizeAviationstackFlight(flight);   
+         } else if (flight.source === "airlabs") {   
+           return normalizer.normalizeAirlabsFlight(flight);   
+         }   
+         return null;   
+       })   
+       .filter((flight) => flight !== null);   
+  
+     logger.info(   
+       `Flight Service: Normalized ${normalizedFlights.length} flights`   
+     );   
+  
+     // Store in cache for future requests   
+     if (normalizedFlights.length > 0) {   
+       await cacheService.set(   
+         params,   
+         normalizedFlights,   
+         rawFlights[0]?.source || "unknown"   
+       );   
+     }   
+  
+     return normalizedFlights;   
+   } catch (error) {   
+     logger.error("Flight Service: Search failed", {   
+       error: error.message,   
+     });   
+  
+     // Cache fallback when API is unavailable   
+     logger.info("Flight Service: Attempting cache fallback");   
+     const fallbackData = await this.getCacheFallback(params);   
+     if (fallbackData) {   
+       logger.info("Flight Service: Using expired cache as fallback");   
+       return fallbackData;   
+     }   
+  
+     throw error;   
+   }   
+ }   
+  
+ /**   
+  * Get expired cache as fallback when API fails   
+  * @param {Object} params - Search parameters   
+  * @returns {Promise<Array|null>} Cached data or null   
+  */   
+ async getCacheFallback(params) {   
+   const cacheKey = cacheService.generateCacheKey(params);   
+  
+   try {   
+     const query = `   
+       SELECT response_data   
+       FROM api_cache   
+       WHERE cache_key = $1   
+       ORDER BY created_at DESC   
+       LIMIT 1   
+     `;   
+  
+     const result = await cacheService.pool.query(query, [cacheKey]);   
+  
+     if (result.rows.length > 0) {   
+       return result.rows[0].response_data;   
+     }   
+  
+     return null;   
+   } catch (error) {   
+     logger.error("Cache fallback failed", { error: error.message });   
+     return null;   
+   }   
+ }   
+}   
+  
+module.exports = new FlightService();   
+ 
