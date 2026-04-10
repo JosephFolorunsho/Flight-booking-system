@@ -3,7 +3,6 @@ const apiConfig = require("../config/apiConfig");
 const logger = require("../utils/logger");
 
 /**
- * US-07: Aviationstack API Adapter
  * Implements adapter pattern to isolate external API from internal logic
  */
 class AviationstackAdapter {
@@ -32,8 +31,12 @@ class AviationstackAdapter {
       const flights = data.data || [];
       logger.info(`Aviationstack Adapter: Found ${flights.length} flights`);
 
+      // Add source field to each flight for adapter pattern (US-07)
       // Return raw data for normalization layer (US-08)
-      return flights;
+      return flights.map(flight => ({
+        ...flight,
+        source: "aviationstack"
+      }));
     } catch (error) {
       logger.error("Aviationstack Adapter: Search failed", {
         error: error.message,
