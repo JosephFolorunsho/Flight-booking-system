@@ -78,6 +78,7 @@ function normalizeAviationstackFlight(flight) {
  * @returns {Object|null} Normalized flight data
  */
 function normalizeAirlabsFlight(flight) {
+  console.log("AirLabs Flight", flight);
   try {
     const normalized = {
       // Source tracking
