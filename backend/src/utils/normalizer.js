@@ -1,15 +1,5 @@
 const logger = require("./logger");
 
-/**
- * US-08: Data Normalization Utilities
- * Converts external API data into internal schema
- */
-
-/**
- * Normalize Aviationstack flight data
- * @param {Object} flight - Raw flight data from Aviationstack
- * @returns {Object|null} Normalized flight data
- */
 function normalizeAviationstackFlight(flight) {
   try {
     const normalized = {

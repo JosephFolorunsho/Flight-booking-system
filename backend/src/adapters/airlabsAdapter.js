@@ -1,108 +1,62 @@
-const ApiClient = require("../services/apiClient");
-const apiConfig = require("../config/apiConfig");
-const logger = require("../utils/logger");
+/**
+ * AirLabs API Adapter
+ * Implements the Adapter pattern (Gamma et al., 1994) to normalise
+ * AirLabs API responses into internal format.
+ *
+ * AirLabs uses Unix epoch timestamps.
+ *
+ * @module adapters/airlabsAdapter
+ */
+
+const axios = require('axios');
+const apiConfig = require('../config/apiConfig');
+const logger = require('../utils/logger');
 
 /**
- * US-07: AirLabs API Adapter
- * Implements adapter pattern to isolate external API from internal logic
+ * Fetch flights from AirLabs API
+ * @param {string} origin - Origin IATA code
+ * @param {string} destination - Destination IATA code
+ * @returns {Promise<Array>} Raw flight data from AirLabs
  */
-class AirlabsAdapter {
-  constructor() {
-    this.apiClient = new ApiClient(apiConfig.airlabs);
-    this.apiKey = apiConfig.airlabs.apiKey;
-  }
+async function fetchFlights(origin, destination) {
+  try {
+    const { baseUrl, apiKey, timeout } = apiConfig.airlabs;
 
-  /**
-   * Search for flights
-   * Returns data in unified internal format
-   * @param {Object} params - Search parameters
-   * @returns {Promise<Array>} Unified flight data
-   */
-  async searchFlights(params) {
-    try {
-      logger.info("AirLabs Adapter: Searching flights", { params });
-
-      const data = await this.apiClient.get("/flights", {
-        api_key: this.apiKey,
-        dep_iata: params.origin,
-        arr_iata: params.destination,
-      });
-
-      const flights = data.response || [];
-      logger.info(`AirLabs Adapter: Found ${flights.length} flights`);
-
-      // Return raw data for normalization layer (US-08)
-      return flights;
-    } catch (error) {
-      logger.error("AirLabs Adapter: Search failed", {
-        error: error.message,
-        params,
-      });
-      throw error;
+    if (!apiKey) {
+      logger.warn('AirLabs API key not configured');
+      return [];
     }
-  }
 
-  /**
-   * Get airport information
-   * Returns data in unified internal format
-   * @param {string} iataCode - Airport IATA code
-   * @returns {Promise<Object>} Unified airport data
-   */
-  async getAirport(iataCode) {
-    try {
-      logger.info("AirLabs Adapter: Getting airport", { iataCode });
+    const response = await axios.get(`${baseUrl}/schedules`, {
+      params: {
+        api_key: apiKey,
+        dep_iata: origin,
+        arr_iata: destination,
+      },
+      timeout,
+    });
 
-      const data = await this.apiClient.get("/airports", {
-        api_key: this.apiKey,
-        iata_code: iataCode,
-      });
-
-      const airports = data.response || [];
-
-      if (airports.length === 0) {
-        throw new Error(`Airport ${iataCode} not found`);
-      }
-
-      // Return raw data for normalization layer (US-08)
-      return airports[0];
-    } catch (error) {
-      logger.error("AirLabs Adapter: Get airport failed", {
-        error: error.message,
-        iataCode,
-      });
-      throw error;
+    if (!response.data || !response.data.response) {
+      logger.warn('AirLabs returned no flight data');
+      return [];
     }
-  }
 
-  /**
-   * Get airline information
-   * @param {string} iataCode - Airline IATA code
-   * @returns {Promise<Object>} Unified airline data
-   */
-  async getAirline(iataCode) {
-    try {
-      logger.info("AirLabs Adapter: Getting airline", { iataCode });
-
-      const data = await this.apiClient.get("/airlines", {
-        api_key: this.apiKey,
-        iata_code: iataCode,
-      });
-
-      const airlines = data.response || [];
-
-      if (airlines.length === 0) {
-        throw new Error(`Airline ${iataCode} not found`);
-      }
-
-      return airlines[0];
-    } catch (error) {
-      logger.error("AirLabs Adapter: Get airline failed", {
-        error: error.message,
-        iataCode,
-      });
-      throw error;
-    }
+    return response.data.response.map((flight) => ({
+      flight_number: flight.flight_iata || 'N/A',
+      airline: flight.airline_iata || 'Unknown',
+      airline_iata: flight.airline_iata || '',
+      origin: flight.dep_iata || origin,
+      destination: flight.arr_iata || destination,
+      departure_time: flight.dep_time || null,
+      arrival_time: flight.arr_time || null,
+      status: flight.status || 'unknown',
+      source: 'airlabs',
+      raw_data: flight,
+    }));
+  } catch (error) {
+    logger.error(`AirLabs API error: ${error.message}`);
+    return [];
   }
 }
 
-module.exports = new AirlabsAdapter();
+module.exports = { fetchFlights };

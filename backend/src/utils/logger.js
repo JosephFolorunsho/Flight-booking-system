@@ -1,9 +1,3 @@
-/**
- * Winston Logger Configuration
- * Provides structured logging for the application
- *
- * @module utils/logger
- */
 
 const winston = require("winston");
 

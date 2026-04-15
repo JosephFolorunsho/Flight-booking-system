@@ -1,112 +1,54 @@
-const ApiClient = require("../services/apiClient");
-const apiConfig = require("../config/apiConfig");
-const logger = require("../utils/logger");
+
+const axios = require('axios');
+const apiConfig = require('../config/apiConfig');
+const logger = require('../utils/logger');
 
 /**
- * Implements adapter pattern to isolate external API from internal logic
+ * Fetch flights from Aviationstack API
+ * @param {string} origin - Origin IATA code
+ * @param {string} destination - Destination IATA code
+ * @returns {Promise<Array>} Raw flight data from Aviationstack
  */
-class AviationstackAdapter {
-  constructor() {
-    this.apiClient = new ApiClient(apiConfig.aviationstack);
-    this.apiKey = apiConfig.aviationstack.apiKey;
-  }
+async function fetchFlights(origin, destination) {
+  try {
+    const { baseUrl, apiKey, timeout } = apiConfig.aviationstack;
 
-  /**
-   * Search for flights
-   * Returns data in unified internal format
-   * @param {Object} params - Search parameters
-   * @returns {Promise<Array>} Unified flight data
-   */
-  async searchFlights(params) {
-    try {
-      logger.info("Aviationstack Adapter: Searching flights", { params });
-
-      const data = await this.apiClient.get("/flights", {
-        access_key: this.apiKey,
-        dep_iata: params.origin,
-        arr_iata: params.destination,
-        flight_date: params.date,
-      });
-
-      const flights = data.data || [];
-      logger.info(`Aviationstack Adapter: Found ${flights.length} flights`);
-
-      // Add source field to each flight for adapter pattern (US-07)
-      // Return raw data for normalization layer (US-08)
-      return flights.map(flight => ({
-        ...flight,
-        source: "aviationstack"
-      }));
-    } catch (error) {
-      logger.error("Aviationstack Adapter: Search failed", {
-        error: error.message,
-        params,
-      });
-      throw error;
+    if (!apiKey) {
+      logger.warn('Aviationstack API key not configured');
+      return [];
     }
-  }
 
-  /**
-   * Get airport information
-   * Returns data in unified internal format
-   * @param {string} iataCode - Airport IATA code
-   * @returns {Promise<Object>} Unified airport data
-   */
-  async getAirport(iataCode) {
-    try {
-      logger.info("Aviationstack Adapter: Getting airport", { iataCode });
+    const response = await axios.get(`${baseUrl}/flights`, {
+      params: {
+        access_key: apiKey,
+        dep_iata: origin,
+        arr_iata: destination,
+        flight_status: 'scheduled',
+      },
+      timeout,
+    });
 
-      const data = await this.apiClient.get("/airports", {
-        access_key: this.apiKey,
-        iata_code: iataCode,
-      });
-
-      const airports = data.data || [];
-
-      if (airports.length === 0) {
-        throw new Error(`Airport ${iataCode} not found`);
-      }
-
-      // Return raw data for normalization layer (US-08)
-      return airports[0];
-    } catch (error) {
-      logger.error("Aviationstack Adapter: Get airport failed", {
-        error: error.message,
-        iataCode,
-      });
-      throw error;
+    if (!response.data || !response.data.data) {
+      logger.warn('Aviationstack returned no flight data');
+      return [];
     }
-  }
 
-  /**
-   * Get airline information
-   * @param {string} iataCode - Airline IATA code
-   * @returns {Promise<Object>} Unified airline data
-   */
-  async getAirline(iataCode) {
-    try {
-      logger.info("Aviationstack Adapter: Getting airline", { iataCode });
-
-      const data = await this.apiClient.get("/airlines", {
-        access_key: this.apiKey,
-        iata_code: iataCode,
-      });
-
-      const airlines = data.data || [];
-
-      if (airlines.length === 0) {
-        throw new Error(`Airline ${iataCode} not found`);
-      }
-
-      return airlines[0];
-    } catch (error) {
-      logger.error("Aviationstack Adapter: Get airline failed", {
-        error: error.message,
-        iataCode,
-      });
-      throw error;
-    }
+    return response.data.data.map((flight) => ({
+      flight_number: flight.flight?.iata || 'N/A',
+      airline: flight.airline?.name || 'Unknown',
+      airline_iata: flight.airline?.iata || '',
+      origin: flight.departure?.iata || origin,
+      destination: flight.arrival?.iata || destination,
+      departure_time: flight.departure?.scheduled || null,
+      arrival_time: flight.arrival?.scheduled || null,
+      status: flight.flight_status || 'unknown',
+      source: 'aviationstack',
+      raw_data: flight,
+    }));
+  } catch (error) {
+    logger.error(`Aviationstack API error: ${error.message}`);
+    return [];
   }
 }
 
-module.exports = new AviationstackAdapter();
+module.exports = { fetchFlights };
