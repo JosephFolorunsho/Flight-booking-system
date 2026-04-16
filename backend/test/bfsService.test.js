@@ -1,8 +1,8 @@
-const bfsService = require('../services/bfsService');
-const graphService = require('../services/graphService');
+const bfsService = require('../src/services/bfsService');
+const graphService = require('../src/services/graphService');
 
 // Mock the logger to avoid console noise during tests
-jest.mock('../utils/logger', () => ({
+jest.mock('../src/utils/logger', () => ({
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),

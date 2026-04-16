@@ -1,10 +1,7 @@
 const axios = require('axios');
 const logger = require('../utils/logger');
 
-/**
- * US-06: Generic API Client
- * Handles HTTP requests with error handling and logging
- */
+
 class ApiClient {
   constructor(config) {
     this.config = config;
