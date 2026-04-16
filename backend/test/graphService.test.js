@@ -1,7 +1,3 @@
-/**
- * Graph Service Tests - US-11
- * Tests graph representation, data mapping, and integrity
- */
 
 const graphService = require('../src/services/graphService');
 
@@ -330,9 +326,9 @@ describe('Graph Service - US-11', () => {
       // SFO has no outgoing flights (orphaned node)
       graphService.buildGraph(mockFlights);
 
-      const validation = graphService.validateGraph();
+      const orphaned = graphService.getOrphanedNodes();
       // SFO is orphaned (no outgoing flights)
-      expect(validation.issues.some(issue => issue.includes('SFO'))).toBe(true);
+      expect(orphaned).toContain('SFO');
     });
   });
 });

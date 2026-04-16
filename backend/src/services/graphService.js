@@ -22,7 +22,9 @@ class GraphService {
       logger.warn('No flights provided to build graph');   
       return { nodes: 0, edges: 0, buildTime: 0 };   
     }   
-   
+
+    let validEdgeCount = 0;
+    
     // Build adjacency list   
     flights.forEach(flight => {   
       const origin = flight.departureAirport;   
@@ -43,12 +45,13 @@ class GraphService {
         this.graph.set(origin, []);   
       }   
       this.graph.get(origin).push(flight);   
+      validEdgeCount++;
     });   
    
     const buildTime = Date.now() - startTime;   
     const stats = {   
       nodes: this.airports.size,   
-      edges: flights.length,   
+      edges: validEdgeCount, 
       buildTime   
     };   
    
@@ -110,18 +113,6 @@ class GraphService {
       issues.push('Duplicate nodes detected');   
     }   
    
-    // Check for orphaned nodes (no outgoing flights)   
-    const orphanedNodes = [];   
-    this.airports.forEach(airport => {   
-      if (!this.graph.has(airport) || this.graph.get(airport).length === 0) {   
-        orphanedNodes.push(airport);   
-      }   
-    });   
-   
-    if (orphanedNodes.length > 0) {   
-      issues.push(`Orphaned nodes: ${orphanedNodes.join(', ')}`);   
-    }   
-   
     // Check for missing destination airports   
     this.graph.forEach((flights, origin) => {   
       flights.forEach(flight => {   
@@ -135,6 +126,20 @@ class GraphService {
       valid: issues.length === 0,   
       issues   
     };   
+  }   
+  
+  /**   
+   * Detect orphaned nodes (nodes with no outgoing edges)   
+   * @returns {Array} - Array of orphaned airport codes   
+   */   
+  getOrphanedNodes() {   
+    const orphaned = [];   
+    this.airports.forEach(airport => {   
+      if (!this.graph.has(airport)) {   
+        orphaned.push(airport);   
+      }   
+    });   
+    return orphaned;   
   }   
    
   /**   
