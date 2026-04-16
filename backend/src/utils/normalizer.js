@@ -68,42 +68,42 @@ function normalizeAviationstackFlight(flight) {
  * @returns {Object|null} Normalized flight data
  */
 function normalizeAirlabsFlight(flight) {
-  console.log("AirLabs Flight", flight);
+  console.log("AirLabs Flight", flight.raw_data);
   try {
     const normalized = {
       // Source tracking
       source: "airlabs",
 
       // Flight identification
-      flightNumber: flight.flight_iata || null,
-      flightIcao: flight.flight_icao || null,
-      flightNumber: flight.flight_number || null,
+      flightNumber: flight.raw_data.flight_number || null,
+      flightIcao: flight.raw_data.raw_data?.flight_icao || null,
+      
 
       // Airline information
-      airlineIata: flight.airline_iata || null,
-      airlineIcao: flight.airline_icao || null,
-      airlineName: flight.airline_name || null,
+      airlineIata: flight.raw_data.airline_iata || null,
+      airlineIcao: flight.raw_data.airline_icao || null,
+      airlineName: flight.raw_data.airline_name || null,
 
       // Departure information
-      departureAirport: flight.dep_iata || null,
-      departureTime: normalizeTimestamp(flight.dep_time),
-      departureTimezone: flight.dep_timezone || null,
-      departureTerminal: flight.dep_terminal || null,
-      departureGate: flight.dep_gate || null,
+      departureAirport: flight.raw_data.dep_iata || null,
+      departureTime: normalizeTimestamp(flight.raw_data.dep_time),
+      departureTimezone: flight.raw_data.dep_timezone || null,
+      departureTerminal: flight.raw_data.dep_terminal || null,
+      departureGate: flight.raw_data.dep_gate || null,
 
       // Arrival information
-      arrivalAirport: flight.arr_iata || null,
-      arrivalTime: normalizeTimestamp(flight.arr_time),
-      arrivalTimezone: flight.arr_timezone || null,
-      arrivalTerminal: flight.arr_terminal || null,
-      arrivalGate: flight.arr_gate || null,
+      arrivalAirport: flight.raw_data.arr_iata || null,
+      arrivalTime: normalizeTimestamp(flight.raw_data.arr_time),
+      arrivalTimezone: flight.raw_data.arr_timezone || null,
+      arrivalTerminal: flight.raw_data.arr_terminal || null,
+      arrivalGate: flight.raw_data.arr_gate || null,
 
       // Flight status
-      status: normalizeStatus(flight.status),
+      status: normalizeStatus(flight.raw_data.status),
 
       // Duration
       duration:
-        flight.duration || calculateDuration(flight.dep_time, flight.arr_time),
+        flight.raw_data.duration || calculateDuration(flight.raw_data.dep_time, flight.raw_data.arr_time),
 
       // Metadata
       fetchedAt: new Date().toISOString(),

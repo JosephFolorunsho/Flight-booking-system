@@ -27,7 +27,7 @@ async function fetchFlights(origin, destination) {
       },
       timeout,
     });
-
+    // console.log('AVIATIONSTACK',response.data);
     if (!response.data || !response.data.data) {
       logger.warn('Aviationstack returned no flight data');
       return [];
@@ -51,4 +51,14 @@ async function fetchFlights(origin, destination) {
   }
 }
 
-module.exports = { fetchFlights };
+/**
+ * Search flights using params object
+ * @param {Object} params - Search parameters with origin and destination
+ * @returns {Promise<Array>} Normalized flight data
+ */
+async function searchFlights(params) {
+  const { origin, destination } = params;
+  return fetchFlights(origin, destination);
+}
+
+module.exports = { fetchFlights, searchFlights };

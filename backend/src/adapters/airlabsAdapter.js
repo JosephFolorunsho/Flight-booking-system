@@ -27,6 +27,8 @@ async function fetchFlights(origin, destination) {
       return [];
     }
 
+    
+
     const response = await axios.get(`${baseUrl}/schedules`, {
       params: {
         api_key: apiKey,
@@ -35,7 +37,8 @@ async function fetchFlights(origin, destination) {
       },
       timeout,
     });
-
+      // console.log('AIRLABS',baseUrl, response.data);
+      
     if (!response.data || !response.data.response) {
       logger.warn('AirLabs returned no flight data');
       return [];
@@ -59,4 +62,14 @@ async function fetchFlights(origin, destination) {
   }
 }
 
-module.exports = { fetchFlights };
+/**
+ * Search flights using params object
+ * @param {Object} params - Search parameters with origin and destination
+ * @returns {Promise<Array>} Normalized flight data
+ */
+async function searchFlights(params) {
+  const { origin, destination } = params;
+  return fetchFlights(origin, destination);
+}
+
+module.exports = { fetchFlights, searchFlights };

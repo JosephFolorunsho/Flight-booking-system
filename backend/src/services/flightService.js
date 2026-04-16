@@ -30,7 +30,7 @@ class FlightService {
       // Use adapter layer
       const rawFlights = await adapters.searchFlights(params);
 
-      console.log(rawFlights);
+      // console.log(rawFlights);
 
       // Normalize data
       const normalizedFlights = rawFlights

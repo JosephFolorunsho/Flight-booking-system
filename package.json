@@ -1,5 +1,32 @@
 {
+  "name": "flight-booking-system",
+  "version": "1.0.0",
+  "description": "SkyRoute - Flight Search and Booking System",
+  "type": "module",
+  "main": "backend/src/index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "node --watch backend/src/index.js",
+    "start": "node backend/src/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "keywords": ["flight", "booking", "travel"],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "axios": "^1.14.0"
+    "axios": "^1.14.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "pg": "^8.11.3",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }
