@@ -5,6 +5,7 @@ const morgan = require("morgan");
 require("dotenv").config();
 
 const flightRoutes = require("./routes/flightRoutes");
+const routeRoutes = require('./routes/routeRoutes'); 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +16,8 @@ app.use(cors());
 app.use(morgan("combined"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/routes', routeRoutes);   
+
 
 // Health check endpoint
 app.get("/health", (req, res) => {

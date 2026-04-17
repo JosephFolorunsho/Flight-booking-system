@@ -30,8 +30,6 @@ class FlightService {
       // Use adapter layer
       const rawFlights = await adapters.searchFlights(params);
 
-      // console.log(rawFlights);
-
       // Normalize data
       const normalizedFlights = rawFlights
         .map((flight) => {
@@ -104,6 +102,48 @@ class FlightService {
     } catch (error) {
       logger.error("Cache fallback failed", { error: error.message });
       return null;
+    }
+  }
+
+  /**
+   * Get all flights (for graph building)
+   * @returns {Promise<Array>} - All available flights
+   */
+  async getAllFlights() {
+    logger.info("Flight Service: Fetching all flights for graph building");
+
+    try {
+      // Use your existing adapter structure
+      // Pass empty params to get all available flights
+      const params = {
+        origin: '',
+        destination: '',
+        date: ''
+      };
+
+      const rawFlights = await adapters.searchFlights(params);
+
+      // Normalize all flights
+      const normalized = rawFlights
+        .map((flight) => {
+          if (flight.source === "aviationstack") {
+            return normalizer.normalizeAviationstackFlight(flight);
+          } else if (flight.source === "airlabs") {
+            return normalizer.normalizeAirlabsFlight(flight);
+          }
+          return null;
+        })
+        .filter((flight) => flight !== null);
+
+      logger.info(`Flight Service: Retrieved ${normalized.length} flights for graph`);
+
+      return normalized;
+
+    } catch (error) {
+      logger.error("Flight Service: Failed to get all flights", {
+        error: error.message,
+      });
+      throw error;
     }
   }
 }
