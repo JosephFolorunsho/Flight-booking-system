@@ -1,5 +1,5 @@
-const routeService = require('../services/routeService');   
-const flightService = require('../services/flightService');   
+const routeService = require('../services/routeservice');
+const flightService = require('../services/flightService');
 const logger = require('../utils/logger');   
    
 class RouteController {   
