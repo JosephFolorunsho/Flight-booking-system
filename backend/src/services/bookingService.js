@@ -5,11 +5,11 @@ const paymentService = require("./paymentService");
 class BookingService {
   constructor() {
     this.pool = new Pool({
-      host: process.env.DB_HOST || "localhost",
-      port: process.env.DB_PORT || 5432,
-      database: process.env.DB_NAME || "skyroute",
-      user: process.env.DB_USER || "postgres",
-      password: process.env.DB_PASSWORD || "postgres",
+      host: process.env.POSTGRES_HOST || "localhost",
+      port: process.env.POSTGRES_PORT || 5432,
+      database: process.env.POSTGRES_DB || "skyroute_db",
+      user: process.env.POSTGRES_USER || "skyroute",
+      password: process.env.POSTGRES_PASSWORD || "skyroute_secret",
     });
   }
 
