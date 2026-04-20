@@ -109,6 +109,20 @@ class BookingController {
 
       res.status(201).json(result);
     } catch (error) {
+      if (error.statusCode) {
+        logger.warn("Booking validation error", {
+          code: error.code,
+          message: error.message,
+        });
+
+        return res.status(error.statusCode).json({
+          error: {
+            code: error.code || "BOOKING_VALIDATION_ERROR",
+            message: error.message,
+          },
+        });
+      }
+
       logger.error("Booking creation error", {
         error: error.message,
         stack: error.stack,

@@ -13,6 +13,22 @@ class BookingService {
     });
   }
 
+  normalizeCode(value) {
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const normalizedValue = value.trim().toUpperCase();
+    return normalizedValue || null;
+  }
+
+  createBookingValidationError(message, code = "BOOKING_VALIDATION_ERROR") {
+    const error = new Error(message);
+    error.code = code;
+    error.statusCode = 400;
+    return error;
+  }
+
   async createBooking(bookingData) {
     const startTime = Date.now();
     const {
@@ -53,30 +69,78 @@ class BookingService {
       const booking = bookingResult.rows[0];
       const bookingId = booking.id;
 
-      const legPromises = flights.map(async (flight, index) => {
+      for (const [index, flight] of flights.entries()) {
+        const originCode = this.normalizeCode(flight.departure.airport);
+        const destinationCode = this.normalizeCode(flight.arrival.airport);
+        const airlineCode = this.normalizeCode(
+          flight.airlineIata || flight.airline,
+        );
+
+        const airportsResult = await client.query(
+          "SELECT id, iata_code FROM airports WHERE iata_code = ANY($1::varchar[])",
+          [[originCode, destinationCode]],
+        );
+
+        const airportIds = new Map(
+          airportsResult.rows.map((airport) => [airport.iata_code, airport.id]),
+        );
+        const originId = airportIds.get(originCode);
+        const destinationId = airportIds.get(destinationCode);
+
+        if (!originId || !destinationId) {
+          const missingCodes = [originCode, destinationCode].filter(
+            (code) => code && !airportIds.has(code),
+          );
+
+          throw this.createBookingValidationError(
+            `Flight ${index + 1}: Unknown airport code(s): ${missingCodes.join(", ")}`,
+            "UNKNOWN_AIRPORT",
+          );
+        }
+
+        let airlineId = null;
+        if (airlineCode && /^[A-Z0-9]{2,3}$/.test(airlineCode)) {
+          const airlineResult = await client.query(
+            "SELECT id FROM airlines WHERE iata_code = $1::varchar(3)",
+            [airlineCode],
+          );
+          airlineId = airlineResult.rows[0]?.id || null;
+        }
+
         const flightCacheQuery = `   
+          WITH flight_input AS (   
+            SELECT   
+              $1::integer AS origin_id,   
+              $2::integer AS dest_id,   
+              $3::integer AS airline_id,   
+              $4::varchar(10) AS flight_number,   
+              $5::timestamptz AS departure_time,   
+              $6::timestamptz AS arrival_time,   
+              $7::integer AS duration_minutes,   
+              $8::numeric(10, 2) AS price,   
+              $9::jsonb AS raw_data   
+          )   
           INSERT INTO flights_cache (   
             origin_id, dest_id, airline_id, flight_number,   
             departure_time, arrival_time, duration_minutes, price, raw_data   
-          )    
-          SELECT    
-            (SELECT id FROM airports WHERE iata_code = $1),   
-            (SELECT id FROM airports WHERE iata_code = $2),   
-            (SELECT id FROM airlines WHERE iata_code = $3),   
-            $4, $5, $6, $7, $8, $9   
+          )   
+          SELECT   
+            origin_id, dest_id, airline_id, flight_number,   
+            departure_time, arrival_time, duration_minutes, price, raw_data   
+          FROM flight_input   
           WHERE NOT EXISTS (   
-            SELECT 1 FROM flights_cache    
-            WHERE flight_number = $4    
-            AND departure_time = $5   
+            SELECT 1 FROM flights_cache   
+            WHERE flight_number = flight_input.flight_number   
+            AND departure_time = flight_input.departure_time   
           )   
           RETURNING id   
         `;
 
         let flightId;
         const cacheResult = await client.query(flightCacheQuery, [
-          flight.departure.airport,
-          flight.arrival.airport,
-          flight.airline || "XX",
+          originId,
+          destinationId,
+          airlineId,
           flight.flightNumber,
           flight.departure.time,
           flight.arrival.time,
@@ -89,7 +153,7 @@ class BookingService {
           flightId = cacheResult.rows[0].id;
         } else {
           const existingFlight = await client.query(
-            "SELECT id FROM flights_cache WHERE flight_number = $1 AND departure_time = $2",
+            "SELECT id FROM flights_cache WHERE flight_number = $1::varchar(10) AND departure_time = $2::timestamptz",
             [flight.flightNumber, flight.departure.time],
           );
           flightId = existingFlight.rows[0].id;
@@ -102,15 +166,13 @@ class BookingService {
           RETURNING id   
         `;
 
-        return client.query(legQuery, [
+        await client.query(legQuery, [
           bookingId,
           flightId,
           index + 1,
           passengerName || "Passenger",
         ]);
-      });
-
-      await Promise.all(legPromises);
+      }
 
       const paymentResult = await paymentService.processPayment({
         bookingReference: bookingId,
