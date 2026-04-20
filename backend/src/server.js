@@ -5,7 +5,8 @@ const morgan = require("morgan");
 require("dotenv").config();
 
 const flightRoutes = require("./routes/flightRoutes");
-const routeRoutes = require('./routes/routeRoutes'); 
+const routeRoutes = require("./routes/routeRoutes");
+const bookingRoutes = require("./routes/bookingRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,8 +17,8 @@ app.use(cors());
 app.use(morgan("combined"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/api/routes', routeRoutes);   
-
+app.use("/api/routes", routeRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

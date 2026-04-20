@@ -13,7 +13,11 @@
     "test": "jest",
     "test:watch": "jest --watch"
   },
-  "keywords": ["flight", "booking", "travel"],
+  "keywords": [
+    "flight",
+    "booking",
+    "travel"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -24,6 +28,7 @@
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
     "pg": "^8.11.3",
+    "uuid": "^14.0.0",
     "winston": "^3.11.0"
   },
   "devDependencies": {

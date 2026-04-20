@@ -34,10 +34,10 @@ class FlightService {
       const normalizedFlights = rawFlights
         .map((flight) => {
           if (flight.source === "aviationstack") {
-            console.log("from aviation Stack");
+            // console.log("from aviation Stack");
             return normalizer.normalizeAviationstackFlight(flight);
           } else if (flight.source === "airlabs") {
-            console.log("from airlabs");
+            // console.log("from airlabs");
             return normalizer.normalizeAirlabsFlight(flight);
           }
           return null;
@@ -116,9 +116,9 @@ class FlightService {
       // Use your existing adapter structure
       // Pass empty params to get all available flights
       const params = {
-        origin: '',
-        destination: '',
-        date: ''
+        origin: "",
+        destination: "",
+        date: "",
       };
 
       const rawFlights = await adapters.searchFlights(params);
@@ -135,10 +135,11 @@ class FlightService {
         })
         .filter((flight) => flight !== null);
 
-      logger.info(`Flight Service: Retrieved ${normalized.length} flights for graph`);
+      logger.info(
+        `Flight Service: Retrieved ${normalized.length} flights for graph`,
+      );
 
       return normalized;
-
     } catch (error) {
       logger.error("Flight Service: Failed to get all flights", {
         error: error.message,
