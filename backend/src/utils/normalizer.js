@@ -7,36 +7,36 @@ function normalizeAviationstackFlight(flight) {
       source: "aviationstack",
 
       // Flight identification
-      flightNumber: flight.flight?.iata || null,
-      flightIcao: flight.flight?.icao || null,
-      flightNumber: flight.flight?.number || null,
+      flightNumber: flight.raw_data.flight?.iata || null,
+      flightIcao: flight.raw_data.flight?.icao || null,
+      // flightNumber: flight.raw_data.flight?.number || null,
 
       // Airline information
-      airlineIata: flight.airline?.iata || null,
-      airlineIcao: flight.airline?.icao || null,
-      airlineName: flight.airline?.name || null,
+      airlineIata: flight.raw_data.airline?.iata || null,
+      airlineIcao: flight.raw_data.airline?.icao || null,
+      airlineName: flight.raw_data.airline?.name || null,
 
       // Departure information
-      departureAirport: flight.departure?.iata || null,
-      departureTime: normalizeTimestamp(flight.departure?.scheduled),
-      departureTimezone: flight.departure?.timezone || null,
-      departureTerminal: flight.departure?.terminal || null,
-      departureGate: flight.departure?.gate || null,
+      departureAirport: flight.raw_data.departure?.iata || null,
+      departureTime: normalizeTimestamp(flight.raw_data.departure?.scheduled),
+      departureTimezone: flight.raw_data.departure?.timezone || null,
+      departureTerminal: flight.raw_data.departure?.terminal || null,
+      departureGate: flight.raw_data.departure?.gate || null,
 
       // Arrival information
-      arrivalAirport: flight.arrival?.iata || null,
-      arrivalTime: normalizeTimestamp(flight.arrival?.scheduled),
-      arrivalTimezone: flight.arrival?.timezone || null,
-      arrivalTerminal: flight.arrival?.terminal || null,
-      arrivalGate: flight.arrival?.gate || null,
+      arrivalAirport: flight.raw_data.arrival?.iata || null,
+      arrivalTime: normalizeTimestamp(flight.raw_data.arrival?.scheduled),
+      arrivalTimezone: flight.raw_data.arrival?.timezone || null,
+      arrivalTerminal: flight.raw_data.arrival?.terminal || null,
+      arrivalGate: flight.raw_data.arrival?.gate || null,
 
       // Flight status
-      status: normalizeStatus(flight.flight_status),
+      status: normalizeStatus(flight.raw_data.flight_status),
 
       // Duration
       duration: calculateDuration(
-        flight.departure?.scheduled,
-        flight.arrival?.scheduled,
+        flight.raw_data.departure?.scheduled,
+        flight.raw_data.arrival?.scheduled,
       ),
 
       // Metadata
@@ -56,7 +56,7 @@ function normalizeAviationstackFlight(flight) {
   } catch (error) {
     logger.error("Failed to normalize Aviationstack flight", {
       error: error.message,
-      flight: flight.flight?.iata,
+      flight: flight.raw_data.flight?.iata,
     });
     return null;
   }
@@ -68,7 +68,7 @@ function normalizeAviationstackFlight(flight) {
  * @returns {Object|null} Normalized flight data
  */
 function normalizeAirlabsFlight(flight) {
-  console.log("AirLabs Flight", flight.raw_data);
+  // console.log("AirLabs Flight", flight.raw_data);
   try {
     const normalized = {
       // Source tracking
@@ -77,7 +77,6 @@ function normalizeAirlabsFlight(flight) {
       // Flight identification
       flightNumber: flight.raw_data.flight_number || null,
       flightIcao: flight.raw_data.raw_data?.flight_icao || null,
-      
 
       // Airline information
       airlineIata: flight.raw_data.airline_iata || null,
@@ -103,7 +102,8 @@ function normalizeAirlabsFlight(flight) {
 
       // Duration
       duration:
-        flight.raw_data.duration || calculateDuration(flight.raw_data.dep_time, flight.raw_data.arr_time),
+        flight.raw_data.duration ||
+        calculateDuration(flight.raw_data.dep_time, flight.raw_data.arr_time),
 
       // Metadata
       fetchedAt: new Date().toISOString(),
