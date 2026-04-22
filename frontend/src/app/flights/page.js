@@ -19,8 +19,8 @@ export default function FlightsPage() {
 
     try {
       const results = await searchFlights({ origin, destination, date });
-      console.log("All flights", results.data.flights);
-      const allFlights = results.data.flights;
+      console.log("All flights", results);
+      const allFlights = results.flights || results.data?.flights || [];
       setFlights(allFlights);
     } catch (err) {
       setError(
