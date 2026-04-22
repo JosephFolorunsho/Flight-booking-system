@@ -22,7 +22,7 @@ export default function RootLayout({ children }) {
         </nav>
         <main className="container">{children}</main>
         <footer className="footer">
-          <p>SkyRoute © 2026 - MSc DevOps Project</p>
+          <p>SkyRoute © 2026 </p>
         </footer>
       </body>
     </html>

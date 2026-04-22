@@ -8,6 +8,41 @@ const logger = require("../utils/logger");
  * Orchestrates flight search with cache-first strategy
  */
 class FlightService {
+  normalizeFlights(rawFlights) {
+    return rawFlights
+      .map((flight) => {
+        if (flight.source === "aviationstack") {
+          return normalizer.normalizeAviationstackFlight(flight);
+        } else if (flight.source === "airlabs") {
+          return normalizer.normalizeAirlabsFlight(flight);
+        }
+        return null;
+      })
+      .filter((flight) => flight !== null);
+  }
+
+  dedupeFlights(flights) {
+    const seen = new Set();
+
+    return flights.filter((flight) => {
+      const key = [
+        flight.source,
+        flight.flightNumber,
+        flight.departureAirport,
+        flight.arrivalAirport,
+        flight.departureTime,
+        flight.arrivalTime,
+      ].join("|");
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+  }
+
   /**
    * Search flights with cache-first strategy
    * @param {Object} params - Search parameters
@@ -31,18 +66,7 @@ class FlightService {
       const rawFlights = await adapters.searchFlights(params);
 
       // Normalize data
-      const normalizedFlights = rawFlights
-        .map((flight) => {
-          if (flight.source === "aviationstack") {
-            // console.log("from aviation Stack");
-            return normalizer.normalizeAviationstackFlight(flight);
-          } else if (flight.source === "airlabs") {
-            // console.log("from airlabs");
-            return normalizer.normalizeAirlabsFlight(flight);
-          }
-          return null;
-        })
-        .filter((flight) => flight !== null);
+      const normalizedFlights = this.normalizeFlights(rawFlights);
 
       logger.info(
         `Flight Service: Normalized ${normalizedFlights.length} flights`,
@@ -107,39 +131,69 @@ class FlightService {
 
   /**
    * Get all flights (for graph building)
+   * @param {Object} seedParams - Optional origin/destination seeds
    * @returns {Promise<Array>} - All available flights
    */
-  async getAllFlights() {
-    logger.info("Flight Service: Fetching all flights for graph building");
+  async getAllFlights(seedParams = {}) {
+    const origin = seedParams.origin || "";
+    const destination = seedParams.destination || "";
+
+    logger.info("Flight Service: Fetching all flights for graph building", {
+      origin,
+      destination,
+    });
 
     try {
-      // Use your existing adapter structure
-      // Pass empty params to get all available flights
-      const params = {
-        origin: "",
-        destination: "",
-        date: "",
-      };
+      const queryCandidates = [
+        { origin: "", destination: "", date: "" },
+        { origin, destination: "", date: "" },
+        { origin: "", destination, date: "" },
+        { origin, destination, date: "" },
+      ];
 
-      const rawFlights = await adapters.searchFlights(params);
+      const seenQueries = new Set();
+      const queries = queryCandidates.filter((params) => {
+        const key = `${params.origin}|${params.destination}|${params.date}`;
 
-      // Normalize all flights
-      const normalized = rawFlights
-        .map((flight) => {
-          if (flight.source === "aviationstack") {
-            return normalizer.normalizeAviationstackFlight(flight);
-          } else if (flight.source === "airlabs") {
-            return normalizer.normalizeAirlabsFlight(flight);
-          }
-          return null;
-        })
-        .filter((flight) => flight !== null);
+        if (seenQueries.has(key)) {
+          return false;
+        }
 
-      logger.info(
-        `Flight Service: Retrieved ${normalized.length} flights for graph`,
+        seenQueries.add(key);
+        return true;
+      });
+
+      const results = await Promise.allSettled(
+        queries.map((params) => this.searchFlights(params)),
       );
 
-      return normalized;
+      const mergedFlights = [];
+
+      results.forEach((result, index) => {
+        const params = queries[index];
+
+        if (result.status === "fulfilled") {
+          mergedFlights.push(...result.value);
+          return;
+        }
+
+        logger.warn("Flight Service: Graph seed query failed", {
+          params,
+          error: result.reason.message,
+        });
+      });
+
+      const dedupedFlights = this.dedupeFlights(mergedFlights);
+
+      logger.info(
+        `Flight Service: Retrieved ${dedupedFlights.length} unique flights for graph`,
+        {
+          seedQueries: queries.length,
+          rawMergedFlights: mergedFlights.length,
+        },
+      );
+
+      return dedupedFlights;
     } catch (error) {
       logger.error("Flight Service: Failed to get all flights", {
         error: error.message,

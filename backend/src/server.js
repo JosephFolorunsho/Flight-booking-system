@@ -20,6 +20,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/routes", routeRoutes);
 app.use("/api/bookings", bookingRoutes);
 
+app.use(
+  cors({
+    origin: ["http://localhost:3001", "http://localhost:3000"],
+    credentials: true,
+  }),
+);
+
 // Health check endpoint
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Backend is running" });

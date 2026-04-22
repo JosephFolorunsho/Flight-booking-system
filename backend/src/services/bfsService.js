@@ -36,6 +36,8 @@ class BFSService {
     const queue = [{ airport: origin, path: [], stops: 0 }];
     const visited = new Set(); // Prevent infinite loops
 
+    // console.log("OUTGOING FROM LHR:", graphService.getOutgoingFlights("LHR"));
+
     while (queue.length > 0) {
       const { airport, path, stops } = queue.shift();
 
@@ -72,6 +74,13 @@ class BFSService {
             stops: stops + 1,
           });
         }
+
+        console.log("CURRENT:", airport, "STOPS:", stops);
+        console.log(
+          "PATH:",
+          path.map((f) => f.arrivalAirport),
+        );
+        console.log("QUEUE SIZE:", queue.length);
       });
     }
 

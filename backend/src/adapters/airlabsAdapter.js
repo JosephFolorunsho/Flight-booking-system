@@ -27,14 +27,22 @@ async function fetchFlights(origin, destination) {
       return [];
     }
 
+    const params = {
+      api_key: apiKey,
+    };
+
+    if (origin) {
+      params.dep_iata = origin;
+    }
+
+    if (destination) {
+      params.arr_iata = destination;
+    }
+
     
 
     const response = await axios.get(`${baseUrl}/schedules`, {
-      params: {
-        api_key: apiKey,
-        dep_iata: origin,
-        arr_iata: destination,
-      },
+      params,
       timeout,
     });
       // console.log('AIRLABS',baseUrl, response.data);

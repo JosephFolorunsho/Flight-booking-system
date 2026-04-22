@@ -18,13 +18,21 @@ async function fetchFlights(origin, destination) {
       return [];
     }
 
+    const params = {
+      access_key: apiKey,
+      flight_status: 'scheduled',
+    };
+
+    if (origin) {
+      params.dep_iata = origin;
+    }
+
+    if (destination) {
+      params.arr_iata = destination;
+    }
+
     const response = await axios.get(`${baseUrl}/flights`, {
-      params: {
-        access_key: apiKey,
-        dep_iata: origin,
-        arr_iata: destination,
-        flight_status: 'scheduled',
-      },
+      params,
       timeout,
     });
     // console.log('AVIATIONSTACK',response.data);
