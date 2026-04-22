@@ -223,6 +223,8 @@ export default function BookingPage() {
           <p><strong>Response Time:</strong> {success.responseTime}ms</p>
         </div>
       )}
+
+
     </div>
   );
 }

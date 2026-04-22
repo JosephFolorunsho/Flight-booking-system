@@ -43,6 +43,37 @@ class FlightService {
     });
   }
 
+  filterFlightsByDate(flights, date) {
+    if (!date) {
+      return flights;
+    }
+
+    return flights.filter((flight) => {
+      const dateCandidates = new Set();
+
+      if (flight.departureTime) {
+        dateCandidates.add(String(flight.departureTime).slice(0, 10));
+
+        const parsedTime = new Date(flight.departureTime);
+        if (!Number.isNaN(parsedTime.getTime())) {
+          dateCandidates.add(parsedTime.toISOString().slice(0, 10));
+        }
+      }
+
+      const airlabsDate = flight.rawData?.raw_data?.dep_time;
+      if (typeof airlabsDate === "string") {
+        dateCandidates.add(airlabsDate.slice(0, 10));
+      }
+
+      const aviationstackDate = flight.rawData?.raw_data?.departure?.scheduled;
+      if (typeof aviationstackDate === "string") {
+        dateCandidates.add(aviationstackDate.slice(0, 10));
+      }
+
+      return dateCandidates.has(date);
+    });
+  }
+
   /**
    * Search flights with cache-first strategy
    * @param {Object} params - Search parameters
@@ -67,21 +98,25 @@ class FlightService {
 
       // Normalize data
       const normalizedFlights = this.normalizeFlights(rawFlights);
+      const dateFilteredFlights = this.filterFlightsByDate(
+        normalizedFlights,
+        params.date,
+      );
 
       logger.info(
-        `Flight Service: Normalized ${normalizedFlights.length} flights`,
+        `Flight Service: Normalized ${normalizedFlights.length} flights and retained ${dateFilteredFlights.length} for requested date`,
       );
 
       // Store in cache for future requests
-      if (normalizedFlights.length > 0) {
+      if (dateFilteredFlights.length > 0) {
         await cacheService.set(
           params,
-          normalizedFlights,
+          dateFilteredFlights,
           rawFlights[0]?.source || "unknown",
         );
       }
 
-      return normalizedFlights;
+      return dateFilteredFlights;
     } catch (error) {
       logger.error("Flight Service: Search failed", {
         error: error.message,

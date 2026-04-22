@@ -19,7 +19,7 @@ export default function RoutesPage() {
     try {
       const results = await searchRoutes({ origin, destination });
       console.log("Route Results", results);
-      setRoutes(results);
+      setRoutes(results.routes || []);
     } catch (err) {
       setError(err.response?.data?.error?.message || "Failed to search routes");
     } finally {

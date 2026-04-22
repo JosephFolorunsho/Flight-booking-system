@@ -9,7 +9,7 @@ const logger = require('../utils/logger');
  * @param {string} destination - Destination IATA code
  * @returns {Promise<Array>} Raw flight data from Aviationstack
  */
-async function fetchFlights(origin, destination) {
+async function fetchFlights(origin, destination, date) {
   try {
     const { baseUrl, apiKey, timeout } = apiConfig.aviationstack;
 
@@ -29,6 +29,10 @@ async function fetchFlights(origin, destination) {
 
     if (destination) {
       params.arr_iata = destination;
+    }
+
+    if (date) {
+      params.flight_date = date;
     }
 
     const response = await axios.get(`${baseUrl}/flights`, {
@@ -54,6 +58,13 @@ async function fetchFlights(origin, destination) {
       raw_data: flight,
     }));
   } catch (error) {
+    const statusCode = error.response?.status;
+
+    if (statusCode === 401 || statusCode === 403) {
+      logger.warn(`Aviationstack authorization failed (${statusCode})`);
+      return [];
+    }
+
     logger.error(`Aviationstack API error: ${error.message}`);
     return [];
   }
@@ -65,8 +76,8 @@ async function fetchFlights(origin, destination) {
  * @returns {Promise<Array>} Normalized flight data
  */
 async function searchFlights(params) {
-  const { origin, destination } = params;
-  return fetchFlights(origin, destination);
+  const { origin, destination, date } = params;
+  return fetchFlights(origin, destination, date);
 }
 
 module.exports = { fetchFlights, searchFlights };

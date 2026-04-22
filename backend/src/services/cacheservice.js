@@ -16,6 +16,7 @@ class CacheService {
     });
 
     this.TTL_HOURS = 24;
+    this.cacheEnabled = true;
   }
 
   /**
@@ -28,12 +29,20 @@ class CacheService {
     return `${origin}_${destination}_${date || "any"}`.toUpperCase();
   }
 
-  /**
-   * Get cached response
-   * @param {Object} params - Search parameters
-   * @returns {Promise<Object|null>} Cached data or null
-   */
+  disableCache(error) {
+    if (this.cacheEnabled) {
+      this.cacheEnabled = false;
+      logger.warn("Cache disabled due to database errors", {
+        error: error.message,
+      });
+    }
+  }
+
   async get(params) {
+    if (!this.cacheEnabled) {
+      return null;
+    }
+
     const startTime = Date.now();
     const cacheKey = this.generateCacheKey(params);
 
@@ -81,6 +90,7 @@ class CacheService {
         error: error.message,
         cacheKey,
       });
+      this.disableCache(error);
       return null;
     }
   }
@@ -93,6 +103,10 @@ class CacheService {
    * @returns {Promise<boolean>} Success status
    */
   async set(params, data, source) {
+    if (!this.cacheEnabled) {
+      return false;
+    }
+
     const cacheKey = this.generateCacheKey(params);
 
     try {
@@ -127,11 +141,11 @@ class CacheService {
 
       return true;
     } catch (error) {
-      console.log("Cache ERR", error);
       logger.error("Cache storage failed", {
         error: error.message,
         cacheKey,
       });
+      this.disableCache(error);
       return false;
     }
   }

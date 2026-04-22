@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import './globals.css'
 
 export const metadata = {
@@ -13,10 +14,10 @@ export default function RootLayout({ children }) {
           <div className="nav-container">
             <h1 className="nav-brand">SkyRoute</h1>
             <div className="nav-links">
-              <a href="/">Home</a>
-              <a href="/flights">Search Flights</a>
-              <a href="/routes">Find Routes</a>
-              <a href="/booking">Create Booking</a>
+              <Link href="/">Home</Link>
+              <Link href="/flights">Search Flights</Link>
+              <Link href="/routes">Find Routes</Link>
+              <Link href="/booking">Create Booking</Link>
             </div>
           </div>
         </nav>

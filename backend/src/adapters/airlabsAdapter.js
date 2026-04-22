@@ -18,7 +18,7 @@ const logger = require('../utils/logger');
  * @param {string} destination - Destination IATA code
  * @returns {Promise<Array>} Raw flight data from AirLabs
  */
-async function fetchFlights(origin, destination) {
+async function fetchFlights(origin, destination, date) {
   try {
     const { baseUrl, apiKey, timeout } = apiConfig.airlabs;
 
@@ -39,7 +39,9 @@ async function fetchFlights(origin, destination) {
       params.arr_iata = destination;
     }
 
-    
+    if (date) {
+      params.dep_date = date;
+    }
 
     const response = await axios.get(`${baseUrl}/schedules`, {
       params,
@@ -76,8 +78,8 @@ async function fetchFlights(origin, destination) {
  * @returns {Promise<Array>} Normalized flight data
  */
 async function searchFlights(params) {
-  const { origin, destination } = params;
-  return fetchFlights(origin, destination);
+  const { origin, destination, date } = params;
+  return fetchFlights(origin, destination, date);
 }
 
 module.exports = { fetchFlights, searchFlights };
