@@ -1,9 +1,9 @@
-import "./globals.css";
+import './globals.css'
 
 export const metadata = {
-  title: "SkyRoute - Flight Booking System",
-  description: "Cloud-Native Flight Booking System",
-};
+  title: 'SkyRoute - Flight Booking System',
+  description: 'Cloud-Native Flight Booking System',
+}
 
 export default function RootLayout({ children }) {
   return (
@@ -20,11 +20,13 @@ export default function RootLayout({ children }) {
             </div>
           </div>
         </nav>
-        <main className="container">{children}</main>
+        <main className="container">
+          {children}
+        </main>
         <footer className="footer">
           <p>SkyRoute © 2026 - MSc DevOps Project</p>
         </footer>
       </body>
     </html>
-  );
+  )
 }
