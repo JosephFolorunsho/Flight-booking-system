@@ -86,7 +86,7 @@ services:
     container_name: skyroute-frontend
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://98.87.163.51:3000
     ports:
       - "3001:80"
     depends_on:
