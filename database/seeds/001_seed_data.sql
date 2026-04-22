@@ -19,7 +19,7 @@ INSERT INTO airports (iata_code, name, city, country, latitude, longitude, timez
     ('IST', 'Istanbul Airport', 'Istanbul', 'Turkey', 41.275278, 28.751944, 'Europe/Istanbul'),
     ('SYD', 'Sydney Kingsford Smith Airport', 'Sydney', 'Australia', -33.946111, 151.177222, 'Australia/Sydney'),
     ('HKG', 'Hong Kong International Airport', 'Hong Kong', 'China', 22.308919, 113.914603, 'Asia/Hong_Kong'),
-    ('ORD', 'O\'Hare International Airport', 'Chicago', 'United States', 41.978603, -87.904842, 'America/Chicago'),
+    ('ORD', 'O\''Hare International Airport', 'Chicago', 'United States', 41.978603, -87.904842, 'America/Chicago'),
     ('DOH', 'Hamad International Airport', 'Doha', 'Qatar', 25.273056, 51.608056, 'Asia/Qatar'),
     ('NBO', 'Jomo Kenyatta International Airport', 'Nairobi', 'Kenya', -1.319167, 36.927778, 'Africa/Nairobi')
 ON CONFLICT (iata_code) DO NOTHING;

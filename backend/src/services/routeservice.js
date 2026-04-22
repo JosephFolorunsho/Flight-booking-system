@@ -107,18 +107,14 @@ class RouteService {
     return {   
       type: this.getRouteType(route.stops),   
       stops: route.stops,   
-      flights: route.path.map((flight, index) => ({   
+      legs: route.path.map((flight, index) => ({   
         segment: index + 1,   
         flightNumber: flight.flightNumber,   
         airline: flight.airline,   
-        departure: {   
-          airport: flight.departureAirport,   
-          time: flight.departureTime   
-        },   
-        arrival: {   
-          airport: flight.arrivalAirport,   
-          time: flight.arrivalTime   
-        },   
+        departureAirport: flight.departureAirport,   
+        departureTime: flight.departureTime,   
+        arrivalAirport: flight.arrivalAirport,   
+        arrivalTime: flight.arrivalTime,   
         duration: flight.duration   
       })),   
       layovers: route.validation.layovers.map(layover => ({   

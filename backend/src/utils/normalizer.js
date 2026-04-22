@@ -2,46 +2,47 @@ const logger = require("./logger");
 
 function normalizeAviationstackFlight(flight) {
   try {
+    const payload = flight?.raw_data || flight;
+
     const normalized = {
       // Source tracking
       source: "aviationstack",
 
       // Flight identification
-      flightNumber: flight.raw_data.flight?.iata || null,
-      flightIcao: flight.raw_data.flight?.icao || null,
-      // flightNumber: flight.raw_data.flight?.number || null,
+      flightNumber: payload.flight?.number || null,
+      flightIcao: payload.flight?.icao || null,
 
       // Airline information
-      airlineIata: flight.raw_data.airline?.iata || null,
-      airlineIcao: flight.raw_data.airline?.icao || null,
-      airlineName: flight.raw_data.airline?.name || null,
+      airlineIata: normalizeCode(payload.airline?.iata),
+      airlineIcao: payload.airline?.icao || null,
+      airlineName: payload.airline?.name || null,
 
       // Departure information
-      departureAirport: flight.raw_data.departure?.iata || null,
-      departureTime: normalizeTimestamp(flight.raw_data.departure?.scheduled),
-      departureTimezone: flight.raw_data.departure?.timezone || null,
-      departureTerminal: flight.raw_data.departure?.terminal || null,
-      departureGate: flight.raw_data.departure?.gate || null,
+      departureAirport: normalizeCode(payload.departure?.iata),
+      departureTime: normalizeTimestamp(payload.departure?.scheduled),
+      departureTimezone: payload.departure?.timezone || null,
+      departureTerminal: payload.departure?.terminal || null,
+      departureGate: payload.departure?.gate || null,
 
       // Arrival information
-      arrivalAirport: flight.raw_data.arrival?.iata || null,
-      arrivalTime: normalizeTimestamp(flight.raw_data.arrival?.scheduled),
-      arrivalTimezone: flight.raw_data.arrival?.timezone || null,
-      arrivalTerminal: flight.raw_data.arrival?.terminal || null,
-      arrivalGate: flight.raw_data.arrival?.gate || null,
+      arrivalAirport: normalizeCode(payload.arrival?.iata),
+      arrivalTime: normalizeTimestamp(payload.arrival?.scheduled),
+      arrivalTimezone: payload.arrival?.timezone || null,
+      arrivalTerminal: payload.arrival?.terminal || null,
+      arrivalGate: payload.arrival?.gate || null,
 
       // Flight status
-      status: normalizeStatus(flight.raw_data.flight_status),
+      status: normalizeStatus(payload.flight_status),
 
       // Duration
       duration: calculateDuration(
-        flight.raw_data.departure?.scheduled,
-        flight.raw_data.arrival?.scheduled,
+        payload.departure?.scheduled,
+        payload.arrival?.scheduled,
       ),
 
       // Metadata
       fetchedAt: new Date().toISOString(),
-      rawData: flight, // Keep for reference
+      rawData: flight,
     };
 
     // Validate before returning
@@ -56,7 +57,7 @@ function normalizeAviationstackFlight(flight) {
   } catch (error) {
     logger.error("Failed to normalize Aviationstack flight", {
       error: error.message,
-      flight: flight.raw_data.flight?.iata,
+      flight: flight?.raw_data?.flight?.iata || flight?.flight?.iata,
     });
     return null;
   }
@@ -70,44 +71,46 @@ function normalizeAviationstackFlight(flight) {
 function normalizeAirlabsFlight(flight) {
   // console.log("AirLabs Flight", flight.raw_data);
   try {
+    const payload = flight?.raw_data || flight;
+
     const normalized = {
       // Source tracking
       source: "airlabs",
 
       // Flight identification
-      flightNumber: flight.raw_data.flight_number || null,
-      flightIcao: flight.raw_data.raw_data?.flight_icao || null,
+      flightNumber: payload.flight_number || null,
+      flightIcao: payload.flight_icao || null,
 
       // Airline information
-      airlineIata: flight.raw_data.airline_iata || null,
-      airlineIcao: flight.raw_data.airline_icao || null,
-      airlineName: flight.raw_data.airline_name || null,
+      airlineIata: normalizeCode(payload.airline_iata),
+      airlineIcao: payload.airline_icao || null,
+      airlineName: payload.airline_name || null,
 
       // Departure information
-      departureAirport: flight.raw_data.dep_iata || null,
-      departureTime: normalizeTimestamp(flight.raw_data.dep_time),
-      departureTimezone: flight.raw_data.dep_timezone || null,
-      departureTerminal: flight.raw_data.dep_terminal || null,
-      departureGate: flight.raw_data.dep_gate || null,
+      departureAirport: normalizeCode(payload.dep_iata),
+      departureTime: normalizeTimestamp(payload.dep_time),
+      departureTimezone: payload.dep_timezone || null,
+      departureTerminal: payload.dep_terminal || null,
+      departureGate: payload.dep_gate || null,
 
       // Arrival information
-      arrivalAirport: flight.raw_data.arr_iata || null,
-      arrivalTime: normalizeTimestamp(flight.raw_data.arr_time),
-      arrivalTimezone: flight.raw_data.arr_timezone || null,
-      arrivalTerminal: flight.raw_data.arr_terminal || null,
-      arrivalGate: flight.raw_data.arr_gate || null,
+      arrivalAirport: normalizeCode(payload.arr_iata),
+      arrivalTime: normalizeTimestamp(payload.arr_time),
+      arrivalTimezone: payload.arr_timezone || null,
+      arrivalTerminal: payload.arr_terminal || null,
+      arrivalGate: payload.arr_gate || null,
 
       // Flight status
-      status: normalizeStatus(flight.raw_data.status),
+      status: normalizeStatus(payload.status),
 
       // Duration
       duration:
-        flight.raw_data.duration ||
-        calculateDuration(flight.raw_data.dep_time, flight.raw_data.arr_time),
+        payload.duration ||
+        calculateDuration(payload.dep_time, payload.arr_time),
 
       // Metadata
       fetchedAt: new Date().toISOString(),
-      rawData: flight, // Keep for reference
+      rawData: flight,
     };
 
     // Validate before returning
@@ -163,6 +166,14 @@ function normalizeTimestamp(timestamp) {
  * @param {string} status - Raw status from API
  * @returns {string} Normalized status
  */
+function normalizeCode(value) {
+  if (!value) {
+    return null;
+  }
+
+  return String(value).trim().toUpperCase();
+}
+
 function normalizeStatus(status) {
   if (!status) return "unknown";
 
@@ -257,10 +268,10 @@ function validateFlight(flight) {
     }
   }
 
-  // Validate IATA codes (should be 3 letters)
-  const iataFields = ["airlineIata", "departureAirport", "arrivalAirport"];
-  for (const field of iataFields) {
-    if (flight[field] && !/^[A-Z]{2,3}$/.test(flight[field])) {
+  // Validate IATA codes (airport codes should be 3 letters)
+  const airportIataFields = ["departureAirport", "arrivalAirport"];
+  for (const field of airportIataFields) {
+    if (flight[field] && !/^[A-Z]{3}$/.test(flight[field])) {
       logger.warn("Invalid IATA code format", {
         field,
         value: flight[field],
@@ -268,6 +279,16 @@ function validateFlight(flight) {
       });
       return false;
     }
+  }
+
+  // Airline IATA can be 2-3 letters depending on carrier/code-share data
+  if (flight.airlineIata && !/^[A-Z]{2,3}$/.test(flight.airlineIata)) {
+    logger.warn("Invalid IATA code format", {
+      field: "airlineIata",
+      value: flight.airlineIata,
+      flightNumber: flight.flightNumber,
+    });
+    return false;
   }
 
   // Validate timestamps are in ISO 8601 format

@@ -17,7 +17,7 @@ jest.mock('../src/utils/logger', () => ({
 
 describe('RouteService - US-12', () => {
   // Mock flight data
-  const flights = [
+  const legs = [
     {
       flightNumber: 'AA100',
       airline: 'American Airlines',
@@ -57,7 +57,7 @@ describe('RouteService - US-12', () => {
   ];
 
   const mockDirectRoute = {
-    path: [flights[2]], // DL300: JFK -> SFO direct
+    path: [legs[2]], // DL300: JFK -> SFO direct
     stops: 0,
     totalFlights: 1,
     validation: {
@@ -74,7 +74,7 @@ describe('RouteService - US-12', () => {
   };
 
   const mockOneStopRoute = {
-    path: [flights[0], flights[1]], // AA100 + UA200: JFK -> LAX -> SFO
+    path: [legs[0], legs[1]], // AA100 + UA200: JFK -> LAX -> SFO
     stops: 1,
     totalFlights: 2,
     validation: {
@@ -97,7 +97,7 @@ describe('RouteService - US-12', () => {
   };
 
   const mockTwoStopRoute = {
-    path: [flights[0], flights[1], flights[3]], // AA100 + UA200 + BA400
+    path: [legs[0], legs[1], legs[3]], // AA100 + UA200 + BA400
     stops: 2,
     totalFlights: 3,
     validation: {
@@ -127,9 +127,9 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockDirectRoute, mockOneStopRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockDirectRoute, mockOneStopRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
 
-      expect(graphService.buildGraph).toHaveBeenCalledWith(flights);
+      expect(graphService.buildGraph).toHaveBeenCalledWith(legs);
       expect(bfsService.findRoutes).toHaveBeenCalledWith('JFK', 'SFO', 2);
       expect(layoverValidator.filterValidRoutes).toHaveBeenCalled();
       expect(result.count).toBeGreaterThan(0);
@@ -138,7 +138,7 @@ describe('RouteService - US-12', () => {
     test('should return empty array when no routes found', async () => {
       bfsService.findRoutes.mockReturnValue([]);
 
-      const result = await routeService.searchRoutes('AAA', 'ZZZ', flights);
+      const result = await routeService.searchRoutes('AAA', 'ZZZ', legs);
 
       expect(result.routes).toEqual([]);
       expect(result.count).toBe(0);
@@ -147,7 +147,7 @@ describe('RouteService - US-12', () => {
     test('should respect maxStops option', async () => {
       bfsService.findRoutes.mockReturnValue([mockDirectRoute]);
 
-      await routeService.searchRoutes('JFK', 'LAX', flights, { maxStops: 0 });
+      await routeService.searchRoutes('JFK', 'LAX', legs, { maxStops: 0 });
 
       expect(bfsService.findRoutes).toHaveBeenCalledWith('JFK', 'LAX', 0);
     });
@@ -158,11 +158,11 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockDirectRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockDirectRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
 
       expect(result.routes[0]).toHaveProperty('type');
       expect(result.routes[0]).toHaveProperty('stops');
-      expect(result.routes[0]).toHaveProperty('flights');
+      expect(result.routes[0]).toHaveProperty('legs');
       expect(result.routes[0]).toHaveProperty('layovers');
       expect(result.routes[0]).toHaveProperty('totalDuration');
       expect(result.routes[0]).toHaveProperty('isOvernight');
@@ -172,7 +172,7 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockOneStopRoute, mockDirectRoute, mockTwoStopRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockOneStopRoute, mockDirectRoute, mockTwoStopRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'LHR', flights);
+      const result = await routeService.searchRoutes('JFK', 'LHR', legs);
 
       expect(result.routes[0].stops).toBe(0); // Direct first
       expect(result.routes[1].stops).toBe(1); // One-stop second
@@ -181,13 +181,13 @@ describe('RouteService - US-12', () => {
 
     test('should sort by journey time when stops are equal', async () => {
       const fastOneStop = {
-        path: [flights[0], flights[1]],
+        path: [legs[0], legs[1]],
         stops: 1,
         validation: { valid: true, layovers: [{ airport: 'LAX', layoverMinutes: 90, valid: true }] },
         journeyTime: { departureTime: '2026-04-16T10:00:00Z', arrivalTime: '2026-04-16T15:00:00Z', totalMinutes: 300, totalHours: '5.00', isOvernight: false }
       };
       const slowOneStop = {
-        path: [flights[0], flights[1]],
+        path: [legs[0], legs[1]],
         stops: 1,
         validation: { valid: true, layovers: [{ airport: 'LAX', layoverMinutes: 90, valid: true }] },
         journeyTime: { departureTime: '2026-04-16T10:00:00Z', arrivalTime: '2026-04-16T17:30:00Z', totalMinutes: 450, totalHours: '7.50', isOvernight: false }
@@ -197,7 +197,7 @@ describe('RouteService - US-12', () => {
       // Return both routes as valid but they have the same flight numbers, so duplicates will be removed
       layoverValidator.filterValidRoutes.mockReturnValue([slowOneStop, fastOneStop]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
 
       // At least one route should be present
       expect(result.routes.length).toBeGreaterThan(0);
@@ -209,7 +209,7 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockDirectRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockDirectRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
 
       expect(result.routes[0].type).toBe('direct');
     });
@@ -218,7 +218,7 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockOneStopRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockOneStopRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
 
       expect(result.routes[0].type).toBe('1-stop');
     });
@@ -227,12 +227,12 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockTwoStopRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockTwoStopRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'LHR', flights);
+      const result = await routeService.searchRoutes('JFK', 'LHR', legs);
 
       expect(result.routes[0].type).toBe('2-stop');
     });
 
-    test('should classify multi-stop flights', () => {
+    test('should classify multi-stop legs', () => {
       const multiStop = { ...mockTwoStopRoute, stops: 5 };
       const type = routeService.getRouteType(5);
 
@@ -245,8 +245,8 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockOneStopRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockOneStopRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
-      const segments = result.routes[0].flights;
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
+      const segments = result.routes[0].legs;
 
       expect(segments[0].segment).toBe(1);
       expect(segments[1].segment).toBe(2);
@@ -256,13 +256,15 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockOneStopRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockOneStopRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
-      const segment = result.routes[0].flights[0];
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
+      const segment = result.routes[0].legs[0];
 
       expect(segment).toHaveProperty('flightNumber');
       expect(segment).toHaveProperty('airline');
-      expect(segment).toHaveProperty('departure');
-      expect(segment).toHaveProperty('arrival');
+      expect(segment).toHaveProperty('departureAirport');
+      expect(segment).toHaveProperty('departureTime');
+      expect(segment).toHaveProperty('arrivalAirport');
+      expect(segment).toHaveProperty('arrivalTime');
       expect(segment).toHaveProperty('duration');
     });
 
@@ -270,13 +272,13 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockDirectRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockDirectRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
-      const segment = result.routes[0].flights[0];
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
+      const segment = result.routes[0].legs[0];
 
-      expect(segment.departure).toHaveProperty('airport');
-      expect(segment.departure).toHaveProperty('time');
-      expect(segment.arrival).toHaveProperty('airport');
-      expect(segment.arrival).toHaveProperty('time');
+      expect(segment).toHaveProperty('departureAirport');
+      expect(segment).toHaveProperty('departureTime');
+      expect(segment).toHaveProperty('arrivalAirport');
+      expect(segment).toHaveProperty('arrivalTime');
     });
   });
 
@@ -285,7 +287,7 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockOneStopRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockOneStopRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
       const layovers = result.routes[0].layovers;
 
       expect(layovers).toHaveLength(1);
@@ -298,7 +300,7 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockOneStopRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockOneStopRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
       const layover = result.routes[0].layovers[0];
 
       expect(layover.durationFormatted).toBe('1h 30m');
@@ -332,21 +334,21 @@ describe('RouteService - US-12', () => {
   });
 
   describe('AC: Duplicate route removal', () => {
-    test('should remove duplicate routes with same flights', async () => {
+    test('should remove duplicate routes with same legs', async () => {
       const duplicates = [mockDirectRoute, mockDirectRoute];
 
       bfsService.findRoutes.mockReturnValue(duplicates);
       layoverValidator.filterValidRoutes.mockReturnValue(duplicates);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
 
       expect(result.count).toBe(1); // Only one unique route
     });
 
     test('should identify duplicates by flight number sequence', () => {
-      const route1 = { path: [flights[0], flights[1]] };
-      const route2 = { path: [flights[0], flights[1]] };
-      const route3 = { path: [flights[2]] };
+      const route1 = { path: [legs[0], legs[1]] };
+      const route2 = { path: [legs[0], legs[1]] };
+      const route3 = { path: [legs[2]] };
 
       const routes = [route1, route2, route3];
       const unique = routeService.removeDuplicateRoutes(routes);
@@ -355,8 +357,8 @@ describe('RouteService - US-12', () => {
     });
 
     test('should preserve non-duplicate routes', () => {
-      const route1 = { path: [flights[0]] };
-      const route2 = { path: [flights[1]] };
+      const route1 = { path: [legs[0]] };
+      const route2 = { path: [legs[1]] };
 
       const routes = [route1, route2];
       const unique = routeService.removeDuplicateRoutes(routes);
@@ -366,20 +368,20 @@ describe('RouteService - US-12', () => {
   });
 
   describe('AC: Overnight flight detection', () => {
-    test('should mark overnight flights in response', async () => {
+    test('should mark overnight legs in response', async () => {
       bfsService.findRoutes.mockReturnValue([mockTwoStopRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockTwoStopRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'LHR', flights);
+      const result = await routeService.searchRoutes('JFK', 'LHR', legs);
 
       expect(result.routes[0].isOvernight).toBe(true);
     });
 
-    test('should mark same-day flights correctly', async () => {
+    test('should mark same-day legs correctly', async () => {
       bfsService.findRoutes.mockReturnValue([mockDirectRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockDirectRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
 
       expect(result.routes[0].isOvernight).toBe(false);
     });
@@ -390,7 +392,7 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockDirectRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockDirectRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
 
       expect(result).toHaveProperty('origin');
       expect(result).toHaveProperty('destination');
@@ -404,7 +406,7 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue([mockDirectRoute, mockOneStopRoute]);
       layoverValidator.filterValidRoutes.mockReturnValue([mockDirectRoute]);
 
-      const result = await routeService.searchRoutes('JFK', 'SFO', flights);
+      const result = await routeService.searchRoutes('JFK', 'SFO', legs);
 
       expect(result.stats).toHaveProperty('totalFound');
       expect(result.stats).toHaveProperty('validRoutes');
@@ -418,7 +420,7 @@ describe('RouteService - US-12', () => {
       bfsService.findRoutes.mockReturnValue(allRoutes);
       layoverValidator.filterValidRoutes.mockReturnValue(validRoutes);
 
-      const result = await routeService.searchRoutes('JFK', 'LHR', flights);
+      const result = await routeService.searchRoutes('JFK', 'LHR', legs);
 
       expect(result.stats.invalidRoutes).toBe(1);
     });

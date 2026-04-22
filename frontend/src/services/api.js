@@ -1,46 +1,33 @@
-/**
- * API Service
- * Centralised Axios client for backend communication
- *
- * @module services/api
- */
-
 import axios from "axios";
 
-const API_BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 15000,
+  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor for logging
-api.interceptors.request.use(
-  (config) => {
-    console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`);
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
+export const searchFlights = async (params) => {
+  const response = await api.post("/api/flights/search", params);
+  return response.data;
+};
 
-// Response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    const message = error.response?.data?.error?.message || error.message;
-    console.error(`[API Error] ${message}`);
-    return Promise.reject(error);
-  },
-);
+export const searchRoutes = async (params) => {
+  const response = await api.post("/api/routes/search", params);
+  console.log("response", response);
+  return response.data;
+};
 
-export const checkHealth = () => api.get("/health");
+export const createBooking = async (bookingData) => {
+  const response = await api.post("/api/bookings", bookingData);
+  return response.data;
+};
 
-/**
- * Search for flights (Sprint 2)
- * @param {Object} searchParams - Search parameters
- * @returns {Promise<Object>} Flight search results
- */
-export const searchFlights = (searchParams) =>
-  api.post("/api/flights/search", searchParams);
+export const getBooking = async (bookingId) => {
+  const response = await api.get(`/api/bookings/${bookingId}`);
+  return response.data;
+};
+
+export default api;

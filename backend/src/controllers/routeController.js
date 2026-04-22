@@ -42,10 +42,15 @@ class RouteController {
       }
 
       // Get all available flights (from cache or API)
-      const flightData = await flightService.searchFlights({
+      // const flightData = await flightService.searchFlights({
+      //   origin,
+      //   destination,
+      //   maxStops: maxStops || 2,
+      // });
+
+      const flightData = await flightService.getAllFlights({
         origin,
         destination,
-        maxStops: maxStops || 2,
       });
 
       if (!flightData || flightData.length === 0) {
