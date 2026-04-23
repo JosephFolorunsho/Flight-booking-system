@@ -1,16 +1,16 @@
-import Link from 'next/link'
-import './globals.css'
+import Link from "next/link";
+import "./globals.css";
 
 export const metadata = {
-  title: 'SkyRoute - Flight Booking System',
-  description: 'Cloud-Native Flight Booking System',
-}
+  title: "SkyRoute - Flight Booking System",
+  description: "Cloud-Native Flight Booking System",
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <nav className="navbar">
+        <nav className="navbar-red">
           <div className="nav-container">
             <h1 className="nav-brand">SkyRoute</h1>
             <div className="nav-links">
@@ -21,13 +21,11 @@ export default function RootLayout({ children }) {
             </div>
           </div>
         </nav>
-        <main className="container">
-          {children}
-        </main>
+        <main className="container">{children}</main>
         <footer className="footer">
           <p>SkyRoute © 2026 </p>
         </footer>
       </body>
     </html>
-  )
+  );
 }
