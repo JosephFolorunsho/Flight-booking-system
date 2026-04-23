@@ -76,11 +76,11 @@ class BFSService {
         }
 
         console.log("CURRENT:", airport, "STOPS:", stops);
-        console.log(
-          "PATH:",
-          path.map((f) => f.arrivalAirport),
-        );
-        console.log("QUEUE SIZE:", queue.length);
+        // console.log(
+        //   "PATH:",
+        //   path.map((f) => f.arrivalAirport),
+        // );
+        // console.log("QUEUE SIZE:", queue.length);
       });
     }
 
