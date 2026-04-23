@@ -57,14 +57,15 @@ services:
     container_name: skyroute-backend
     restart: unless-stopped
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
       POSTGRES_USER: ${POSTGRES_USER:-skyroute}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skyroute_secret}
       POSTGRES_DB: ${POSTGRES_DB:-skyroute_db}
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
-      FRONTEND_URL: http://localhost:5173
+      FRONTEND_URL: http://localhost:3001
+      AVIATIONSTACK_API_KEY: ${AVIATIONSTACK_API_KEY:-}
     ports:
       - "3000:3000"
     depends_on:
@@ -85,9 +86,10 @@ services:
     container_name: skyroute-frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://98.87.163.51:3000
+      PORT: 80
     ports:
-      - "5173:80"
+      - "3001:80"
     depends_on:
       - backend
     networks:
