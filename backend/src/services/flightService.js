@@ -1,6 +1,6 @@
 const adapters = require("../adapters");
 const normalizer = require("../utils/normalizer");
-const cacheService = require("./cacheservice");
+const cacheService = require("./cacheService");
 const logger = require("../utils/logger");
 
 /**
