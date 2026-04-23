@@ -30,7 +30,8 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY --from=builder --chown=nodejs:nodejs /build/node_modules ./node_modules   
 COPY --chown=nodejs:nodejs . .   
    
-# Switch to non-root user   
+# Switch to non-root user  
+RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs 
 USER nodejs   
    
 # Health check   
@@ -41,5 +42,5 @@ EXPOSE 3000
    
 ENV NODE_ENV=production   
    
-ENTRYPOINT ["/sbin/dumb-init", "--"]   
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]  
 CMD ["node", "src/server.js"] 

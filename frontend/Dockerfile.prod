@@ -1,7 +1,7 @@
 # Multi-stage build for Next.js production   
    
 # Stage 1: Dependencies   
-FROM node:18-alpine AS deps   
+FROM node:20-alpine AS deps   
    
 WORKDIR /app   
    
@@ -9,7 +9,7 @@ COPY package*.json ./
 RUN npm ci   
    
 # Stage 2: Builder   
-FROM node:18-alpine AS builder   
+FROM node:20-alpine AS builder   
    
 WORKDIR /app   
    
@@ -22,7 +22,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build   
    
 # Stage 3: Production image   
-FROM node:18-alpine AS runner   
+FROM node:20-alpine AS runner   
    
 LABEL maintainer="SkyRoute DevOps Team"   
 LABEL description="SkyRoute Frontend - Production Image"   
@@ -55,5 +55,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \   
     CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"   
    
-ENTRYPOINT ["/sbin/dumb-init", "--"]   
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]   
 CMD ["node", "server.js"]  
