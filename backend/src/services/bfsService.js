@@ -74,8 +74,8 @@ class BFSService {
             stops: stops + 1,
           });
         }
-        console.log(airport);
-        // console.log("CURRENT:", airport, "STOPS:", stops);
+
+        console.log("CURRENT:", airport, "STOPS:", stops);
         // console.log(
         //   "PATH:",
         //   path.map((f) => f.arrivalAirport),
