@@ -10,7 +10,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <nav className="navbar-red">
+        <nav className="navbar">
           <div className="nav-container">
             <h1 className="nav-brand">SkyRoute</h1>
             <div className="nav-links">
